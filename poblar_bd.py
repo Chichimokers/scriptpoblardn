@@ -244,7 +244,7 @@ def load_to_postgres():
         tables = [
             'tb_category', 'tb_subcategory', 'tb_user',
             'tb_discounts', 'tb_products', 'tb_orders',
-            'tb_order_products', 'tb_rating'
+            'tb_order_products', 'tb_rating', 'tb_province', 'tb_municipality', 'tb_prices_by_weight'
         ]
 
         # 
