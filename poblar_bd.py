@@ -118,7 +118,7 @@ def generate_data():
             'provinceId': random.choice(provinces_data_frame['id']),
             'base_price': random.randint(5, 25),
             'min_hours': 24,
-            'max_hours': 24 * random.randint(1, 4),
+            'max_hours': 24 * random.randint(2, 4),
         })
         municipalities_data.append(_municipality)
 
