@@ -230,7 +230,7 @@ def generate_data():
     safe_save(products, 'tb_products')
     safe_save(provinces_data_frame, 'tb_province')
     safe_save(municipalities_data_frame, 'tb_municipality')
-    safe_save(prices_by_weight_data_frame, 'tb_prices_by_weight')
+    safe_save(prices_by_weight_data_frame, 'tb_price_by_weight')
     safe_save(orders, 'tb_orders')
     safe_save(order_products, 'tb_order_products')
     safe_save(ratings, 'tb_rating')
@@ -244,7 +244,7 @@ def load_to_postgres():
         tables = [
             'tb_category', 'tb_subcategory', 'tb_user',
             'tb_discounts', 'tb_products', 'tb_orders',
-            'tb_order_products', 'tb_rating', 'tb_province', 'tb_municipality', 'tb_prices_by_weight'
+            'tb_order_products', 'tb_rating', 'tb_province', 'tb_municipality', 'tb_price_by_weight'
         ]
 
         # 
