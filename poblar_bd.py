@@ -15,6 +15,10 @@ def generate_common_data():
         'deleted_at': None
     }
 
+def generate_image_url():
+    var = f'Designer ({random.randint(0, 15)}).jpeg'
+    return f'http://localhost:8080/images/{var}'
+
 
 def generate_data():
     fake = Faker('es_ES')
@@ -88,7 +92,7 @@ def generate_data():
             'categoryId': category['id'],
             'subCategoryId': subcats_for_category.sample(1)['id'].values[0],  # Selección segura
             'discountsId': None,
-            'image': fake.image_url(),
+            'image': generate_image_url(),
             'weight': random.randint(1, 50),
         })
         products_data.append(_product)
