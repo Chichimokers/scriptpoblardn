@@ -75,31 +75,7 @@ def generate_data():
         'deleted_at': None
     } for _ in range(num_discounts)])
 
-    # 5. tb_products (200 productos)
-    products_data = []
-    for _ in range(200):
-        # Seleccionar categoría y sus subcategorías
-        category = random.choice(categories.to_dict('records'))
-        subcats_for_category = subcategories[subcategories['categoryId'] == category['id']]
-
-        _product = generate_common_data()
-        _product.update({
-            'name': fake.text(max_nb_chars=30).title()[:100],
-            'price': round(random.uniform(10, 1000), 2),
-            'description': fake.paragraph(nb_sentences=3)[:255],
-            'short_description': fake.sentence()[:255],
-            'quantity': random.randint(0, 100),
-            'categoryId': category['id'],
-            'subCategoryId': subcats_for_category.sample(1)['id'].values[0],  # Selección segura
-            'discountsId': None,
-            'image': generate_image_url(),
-            'weight': random.randint(1, 50),
-        })
-        products_data.append(_product)
-
-    products = pd.DataFrame(products_data)
-
-    # 6. Province (15 provincias)
+    # 4. Province (15 provincias)
     provinces_data = []
     provinces = ['Pinar del Rio', 'La habana', 'Artemisa', 'Mayabeque', 'Matanzas', 'Cienfuegos', 'Villa Clara',
                  'Sancti Spiritus', 'Ciego de Avila', 'Camaguey', 'Las Tunas', 'Granma', 'Holguin', 'Santiago de Cuba',
@@ -111,6 +87,32 @@ def generate_data():
         provinces_data.append(_province)
 
     provinces_data_frame = pd.DataFrame(provinces_data)
+
+    # 5. tb_products (200 productos)
+    products_data = []
+    for province in provinces_data:
+        for _ in range(200):
+            # Seleccionar categoría y sus subcategorías
+            category = random.choice(categories.to_dict('records'))
+            subcats_for_category = subcategories[subcategories['categoryId'] == category['id']]
+
+            _product = generate_common_data()
+            _product.update({
+                'name': fake.text(max_nb_chars=30).title()[:100],
+                'price': round(random.uniform(10, 1000), 2),
+                'description': fake.paragraph(nb_sentences=3)[:255],
+                'short_description': fake.sentence()[:255],
+                'quantity': random.randint(0, 100),
+                'categoryId': category['id'],
+                'subCategoryId': subcats_for_category.sample(1)['id'].values[0],  # Selección segura
+                'discountsId': None,
+                'image': generate_image_url(),
+                'weight': random.randint(1, 50),
+                'province_id': str(province['id']),
+            })
+            products_data.append(_product)
+
+    products = pd.DataFrame(products_data)
 
     # 7. Municipality
     municipalities_data = []
@@ -231,8 +233,8 @@ def generate_data():
     safe_save(subcategories, 'tb_subcategory')
     safe_save(users, 'tb_user')
     safe_save(discounts, 'tb_discounts')
-    safe_save(products, 'tb_products')
     safe_save(provinces_data_frame, 'tb_province')
+    safe_save(products, 'tb_products')
     safe_save(municipalities_data_frame, 'tb_municipality')
     safe_save(prices_by_weight_data_frame, 'tb_price_by_weight')
     safe_save(orders, 'tb_orders')
@@ -246,9 +248,17 @@ def load_to_postgres():
         engine = create_engine('postgresql+psycopg2://myuser:mypassword@localhost:5432/esaquishop')
 
         tables = [
-            'tb_category', 'tb_subcategory', 'tb_user',
-            'tb_discounts', 'tb_products', 'tb_orders',
-            'tb_order_products', 'tb_rating', 'tb_province', 'tb_municipality', 'tb_price_by_weight'
+            'tb_province',
+            'tb_category',
+            'tb_subcategory',
+            'tb_user',
+            'tb_discounts',
+            'tb_products',
+            'tb_orders',
+            'tb_order_products',
+            'tb_rating',
+            'tb_municipality',
+            'tb_price_by_weight'
         ]
 
         # 
