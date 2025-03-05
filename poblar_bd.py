@@ -41,7 +41,7 @@ def generate_data():
         for _ in range(3):
             subcategories_data.append({
                 'id': uuid.uuid4(),
-                'name': fake.word()[:50],
+                'name': fake.unique.word()[:50],
                 'categoryId': category_id,  # Asignación directa a la categoría
                 'created_at': fake.date_time_between(start_date='-1y', end_date='now'),
                 'updated_at': fake.date_time_between(start_date='-1y', end_date='now'),
