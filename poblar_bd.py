@@ -64,17 +64,6 @@ def generate_data():
         'deleted_at': None
     } for i in range(100)])
 
-    # 4. tb_discounts (60 descuentos para 200 productos con 30% de probabilidad)
-    num_discounts = max(60, int(200 * 0.3))  # Mínimo 60 descuentos
-    discounts = pd.DataFrame([{
-        'id': uuid.uuid4(),
-        'min': random.randint(2, 10),
-        'reduction': round(random.uniform(5, 50), 2),
-        'created_at': fake.date_time_between(start_date='-1y', end_date='now'),
-        'updated_at': fake.date_time_between(start_date='-1y', end_date='now'),
-        'deleted_at': None
-    } for _ in range(num_discounts)])
-
     # 4. Province (15 provincias)
     provinces_data = []
     provinces = ['Pinar del Rio', 'La habana', 'Artemisa', 'Mayabeque', 'Matanzas', 'Cienfuegos', 'Villa Clara',
@@ -88,13 +77,35 @@ def generate_data():
 
     provinces_data_frame = pd.DataFrame(provinces_data)
 
-    # 5. tb_products (200 productos)
+    # 5. tb_discounts (60 descuentos para 200 productos con 30% de probabilidad)
+    discounts_data = []
+    num_discounts = max(60, int(3000 * 0.4)) # Mínimo 1500 descuentos
+
+    for _ in range(num_discounts):
+        _discount: dict = generate_common_data()
+        _discount.update({
+            'min': random.randint(2, 10),
+            'reduction': round(random.uniform(5, 50), 2),
+        })
+        discounts_data.append(_discount)
+
+    discounts_data_frame = pd.DataFrame(discounts_data)
+
+    # 6. tb_products (200 productos)
     products_data = []
+    discounts_data_temp = discounts_data.copy()
     for province in provinces_data:
         for _ in range(200):
             # Seleccionar categoría y sus subcategorías
             category = random.choice(categories.to_dict('records'))
             subcats_for_category = subcategories[subcategories['categoryId'] == category['id']]
+
+            # Seleccion del descuento
+            _pdiscounts = None
+
+            if len(discounts_data_temp) > 0 and random.random() > 0.5:
+                _pdiscounts = random.choice(discounts_data_temp)
+                discounts_data_temp.remove(_pdiscounts)
 
             _product = generate_common_data()
             _product.update({
@@ -104,8 +115,8 @@ def generate_data():
                 'short_description': fake.sentence()[:255],
                 'quantity': random.randint(0, 100),
                 'categoryId': category['id'],
-                'subCategoryId': subcats_for_category.sample(1)['id'].values[0],  # Selección segura
-                'discountsId': None,
+                'subCategoryId': subcats_for_category.sample(1)['id'].values[0],# Selección segura
+                'discountsId': _pdiscounts['id'] if _pdiscounts else None,
                 'image': generate_image_url(),
                 'weight': random.randint(1, 50),
                 'province_id': str(province['id']),
@@ -232,7 +243,7 @@ def generate_data():
     safe_save(categories, 'tb_category')
     safe_save(subcategories, 'tb_subcategory')
     safe_save(users, 'tb_user')
-    safe_save(discounts, 'tb_discounts')
+    safe_save(discounts_data_frame, 'tb_discounts')
     safe_save(provinces_data_frame, 'tb_province')
     safe_save(products, 'tb_products')
     safe_save(municipalities_data_frame, 'tb_municipality')
