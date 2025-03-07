@@ -4,10 +4,10 @@ import random
 import uuid
 from sqlalchemy import create_engine
 
+fake = Faker('es_ES')
 
+# Method to generate common datas
 def generate_common_data():
-    fake = Faker('es_ES')
-
     return {
         'id': uuid.uuid4(),
         'created_at': fake.date_time_between(start_date='-2y', end_date='now'),
@@ -15,57 +15,58 @@ def generate_common_data():
         'deleted_at': None
     }
 
+# Method to generate image_urls
 def generate_image_url():
     var = f'Designer ({random.randint(0, 15)}).jpeg'
     return f'http://localhost:8080/images/{var}'
 
+# Category
+def generate_category() -> list[dict]:
+    categories_data: list[dict] = []
+    for _ in ['Electrónica', 'Ropa', 'Hogar', 'Deportes', 'Juguetes']:
+        _category: dict = generate_common_data()
+        _category.update({'name': _})
+        categories_data.append(_category)
 
-def generate_data():
-    fake = Faker('es_ES')
+    return categories_data
 
-    # --- Generación segura de datos ---
+# SubCategory
+def generate_subcategory(categories: list[dict]) -> list[dict]:
+    subcategories_data: list[dict] = []
 
-    # 1. tb_category (5 categorías)
-    categories = pd.DataFrame([{
-        'id': uuid.uuid4(),
-        'name': name,
-        'created_at': fake.date_time_between(start_date='-2y', end_date='now'),
-        'updated_at': fake.date_time_between(start_date='-2y', end_date='now'),
-        'deleted_at': None
-    } for name in ['Electrónica', 'Ropa', 'Hogar', 'Deportes', 'Juguetes']])
-
-    # 2. tb_subcategory (15 subcategorías - 3 por categoría)
-    subcategories_data = []
-    for category_id in categories['id']:
-        # 3 subcategorías por categoría (5 categorías × 3 = 15)
+    for category in categories:
         for _ in range(3):
-            subcategories_data.append({
-                'id': uuid.uuid4(),
+            _subcategory: dict = generate_common_data()
+            _subcategory.update({
                 'name': fake.unique.word()[:50],
-                'categoryId': category_id,  # Asignación directa a la categoría
-                'created_at': fake.date_time_between(start_date='-1y', end_date='now'),
-                'updated_at': fake.date_time_between(start_date='-1y', end_date='now'),
-                'deleted_at': None
+                'categoryId': category['id'],
             })
-    subcategories = pd.DataFrame(subcategories_data)
+            subcategories_data.append(_subcategory)
 
-    # 3. tb_user (100 usuarios)
-    users = pd.DataFrame([{
-        'id': uuid.uuid4(),
-        'name': fake.name()[:30],
-        'email': f"{fake.user_name()[:15]}{i}@gmail.com"[:40],
-        'rol': random.randint(1, 2),
-        'password': fake.password(length=12),
-        'enabled': True,
-        'last_login': fake.date_time_between(start_date='-6m', end_date='now'),
-        'locked': False,
-        'created_at': fake.date_time_between(start_date='-2y', end_date='now'),
-        'updated_at': fake.date_time_between(start_date='-2y', end_date='now'),
-        'deleted_at': None
-    } for i in range(100)])
+    return subcategories_data
 
-    # 4. Province (15 provincias)
-    provinces_data = []
+# Users
+def generate_user() -> list[dict]:
+    users_data: list[dict] = []
+
+    for _ in range(100):
+        _user: dict = generate_common_data()
+        _user.update({
+            'name': fake.name()[:30],
+            'email': f"{fake.user_name()[:15]}{_}@gmail.com"[:40],
+            'rol': random.randint(1, 2),
+            'password': fake.password(length=12),
+            'enabled': True,
+            'last_login': fake.date_time_between(start_date='-6m', end_date='now'),
+            'locked': False,
+        })
+        users_data.append(_user)
+
+    return users_data
+
+# Provinces
+def generate_province() -> list[dict]:
+    provinces_data: list[dict] = []
     provinces = ['Pinar del Rio', 'La habana', 'Artemisa', 'Mayabeque', 'Matanzas', 'Cienfuegos', 'Villa Clara',
                  'Sancti Spiritus', 'Ciego de Avila', 'Camaguey', 'Las Tunas', 'Granma', 'Holguin', 'Santiago de Cuba',
                  'Guantanamo']
@@ -75,11 +76,12 @@ def generate_data():
         _province.update({'name': _})
         provinces_data.append(_province)
 
-    provinces_data_frame = pd.DataFrame(provinces_data)
+    return provinces_data
 
-    # 5. tb_discounts (60 descuentos para 200 productos con 30% de probabilidad)
-    discounts_data = []
-    num_discounts = max(60, int(3000 * 0.4)) # Mínimo 1500 descuentos
+# Discounts
+def generate_discount() -> list[dict]:
+    discounts_data: list[dict] = []
+    num_discounts = max(60, int(3000 * 0.4))
 
     for _ in range(num_discounts):
         _discount: dict = generate_common_data()
@@ -89,18 +91,23 @@ def generate_data():
         })
         discounts_data.append(_discount)
 
-    discounts_data_frame = pd.DataFrame(discounts_data)
+    return discounts_data
 
-    # 6. tb_products (200 productos)
-    products_data = []
-    discounts_data_temp = discounts_data.copy()
-    for province in provinces_data:
+# Products
+def generate_product(discounts: list[dict], categories: list[dict], subcategories: list[dict], provinces: list[dict]) -> list[dict]:
+    products_data: list[dict] = []
+    discounts_data_temp: list[dict] = discounts.copy()
+
+    for province in provinces:
         for _ in range(200):
-            # Seleccionar categoría y sus subcategorías
-            category = random.choice(categories.to_dict('records'))
-            subcats_for_category = subcategories[subcategories['categoryId'] == category['id']]
+            _category = random.choice(categories)
+            matching_subcategories = [s for s in subcategories if s['categoryId'] == _category['id']]
 
-            # Seleccion del descuento
+            if not matching_subcategories:  # Skip if no matching subcategories
+                continue
+
+            _subcategory = random.choice(matching_subcategories)
+
             _pdiscounts = None
 
             if len(discounts_data_temp) > 0 and random.random() > 0.5:
@@ -114,8 +121,8 @@ def generate_data():
                 'description': fake.paragraph(nb_sentences=3)[:255],
                 'short_description': fake.sentence()[:255],
                 'quantity': random.randint(0, 100),
-                'categoryId': category['id'],
-                'subCategoryId': subcats_for_category.sample(1)['id'].values[0],# Selección segura
+                'categoryId': _category['id'],
+                'subCategoryId': _subcategory['id'],  # Selección segura
                 'discountsId': _pdiscounts['id'] if _pdiscounts else None,
                 'image': generate_image_url(),
                 'weight': random.randint(1, 50),
@@ -123,50 +130,52 @@ def generate_data():
             })
             products_data.append(_product)
 
-    products = pd.DataFrame(products_data)
+    return products_data
 
-    # 7. Municipality
-    municipalities_data = []
+# Municipalities
+def generate_municipality(provinces: list[dict]) -> list[dict]:
+    municipalities_data: list[dict] = []
 
     for _ in range(400):
-        _municipality = generate_common_data()
+        _municipality: dict = generate_common_data()
         _municipality.update({
             'name': fake.name()[:50],
-            'provinceId': random.choice(provinces_data_frame['id']),
+            'provinceId': random.choice(provinces)['id'],
             'base_price': random.randint(5, 25),
             'min_hours': 24,
             'max_hours': 24 * random.randint(2, 4),
         })
         municipalities_data.append(_municipality)
 
-    municipalities_data_frame = pd.DataFrame(municipalities_data)
+    return municipalities_data
 
-    # 8. Prices by Weight
-    prices_by_weight_data = []
+# Prices by weights
+def generate_price_by_weight(municipalities: list[dict]) -> list[dict]:
+    prices_bye_wight_data: list[dict] = []
     unique_prices = set()
 
-    for municipality_id in municipalities_data_frame['id']:
-        num_prices = random.randint(1, 4)
+    for municipality in municipalities:
+        num_prices = random.randint(1, 8)
         for _ in range(num_prices):
             while True:
                 _price = round(random.uniform(1, 50), 2)
-                min_weight = random.randint(10, 50)
-                if (municipality_id, _price) not in unique_prices:
-                    unique_prices.add((municipality_id, _price))
-                    _pbw = generate_common_data()
+                min_weight = random.randint(10, 80)
+                if(municipality['id'], _price) not in unique_prices:
+                    unique_prices.add((municipality['id'], _price))
+                    _pbw: dict = generate_common_data()
                     _pbw.update({
-                        'municipalityId': municipality_id,
+                        'municipalityId': municipality['id'],
                         'price': _price,
                         'minWeight': min_weight,
                     })
-                    prices_by_weight_data.append(_pbw)
+                    prices_bye_wight_data.append(_pbw)
                     break
 
-    prices_by_weight_data_frame = pd.DataFrame(prices_by_weight_data)
+    return prices_bye_wight_data
 
-    # 9. tb_orders (300 órdenes)
-    orders_data = []
-    provinces = [
+# Orders
+def generate_order(users: list[dict]) -> list[dict]:
+    provinces: list[str] = [
         'Álava', 'Albacete', 'Alicante', 'Almería', 'Asturias', 'Ávila',
         'Badajoz', 'Baleares', 'Barcelona', 'Burgos', 'Cáceres', 'Cádiz',
         'Cantabria', 'Castellón', 'Ciudad Real', 'Córdoba', 'Cuenca',
@@ -178,6 +187,8 @@ def generate_data():
         'Valencia', 'Valladolid', 'Vizcaya', 'Zamora', 'Zaragoza'
     ]
 
+    orders_data: list[dict] = []
+
     for _ in range(300):
         _order = generate_common_data()
         _order.update({
@@ -188,71 +199,117 @@ def generate_data():
             'CI': fake.bothify(text='########?').upper(),
             'subtotal': 0.0,
             'status': random.choice(['pending', 'accepted', 'cancelled', 'retired', 'paid', 'completed']),
-            'userId': random.choice(users['id']),
+            'userId': random.choice(users)['id'],
             'stripe_id': fake.uuid4() if random.random() > 0.5 else None,
         })
         orders_data.append(_order)
-    orders = pd.DataFrame(orders_data)
 
-    # 10. tb_order_products (Relación segura)
-    order_products = []
-    for _, order in orders.iterrows():
-        num_products = random.randint(1, 5)
-        selected_products = products.sample(num_products)
-        subtotal = 0.0
+    return orders_data
 
-        for _, product in selected_products.iterrows():
-            quantity = random.randint(1, 3)
-            subtotal += product['price'] * quantity
+# Order products
+def generate_order_product(orders: list[dict], products: list[dict]) -> list[dict]:
+    order_product_data: list[dict] = []
 
-            _order = generate_common_data()
-            _order.update({
+    for i, order in enumerate(orders):
+        _num_products: int = random.randint(1, 6)
+        _selected_products = random.choices(products, k=_num_products)
+        subtotal: float = 0.0
+
+        for product in _selected_products:
+            _quantity: int = random.randint(1, 3)
+            subtotal += product['price'] * _quantity
+
+            _order_product: dict = generate_common_data()
+            _order_product.update({
                 'orderId': order['id'],
                 'productId': product['id'],
-                'quantity': quantity,
+                'quantity': _quantity,
             })
-            order_products.append(_order)
+            order_product_data.append(_order_product)
 
-        orders.loc[orders['id'] == order['id'], 'subtotal'] = round(subtotal, 2)
+        orders[i]['subtotal'] = round(subtotal, 2)
 
-    order_products = pd.DataFrame(order_products)
+    return order_product_data
+
+# Ratings
+def generate_rating(users: list[dict], products: list[dict]) -> list[dict]:
+    rating_data: list[dict] = []
+    unique: set = set()
+
+    while len(unique) < 500:
+        user = random.choice(users)['id']
+        product = random.choice(products)['id']
+        if (user, product) not in unique:
+            unique.add((user, product))
+            _rating: dict = generate_common_data()
+            _rating.update({
+                'rate': random.randint(1, 5),
+                'userId': user,
+                'productId': product,
+            })
+            rating_data.append(_rating)
+
+    return rating_data
+
+def generate_data():
+    # --- Generación segura de datos ---
+    # 1. Categorias
+    categories_data: list[dict] = generate_category()
+
+    # 2. SubCategorias
+    subcategories_data: list[dict] = generate_subcategory(categories_data)
+
+    # 3. User
+    users_data: list[dict] = generate_user()
+
+    # 4. Province (15 provincias)
+    provinces_data: list[dict] = generate_province()
+
+    # 5. tb_discounts (60 descuentos para 200 productos con 30% de probabilidad)
+    discounts_data: list[dict] = generate_discount()
+
+    # 6. tb_products (200 productos)
+    products_data: list[dict] = generate_product(discounts_data, categories_data, subcategories_data, provinces_data)
+
+    # 7. Municipality
+    municipalities_data: list[dict] = generate_municipality(provinces_data)
+
+    # 8. Prices by Weight
+    prices_by_weight_data: list[dict] = generate_price_by_weight(municipalities_data)
+
+    # 9. tb_orders (300 órdenes)
+    orders_data: list[dict] = generate_order(users_data)
+
+    # 10. tb_order_products (Relación segura)
+    order_products_data: list[dict] = generate_order_product(orders_data, products_data)
 
     # 11. tb_rating (500 ratings únicos)
-    unique_pairs = set()
-    while len(unique_pairs) < 500:
-        user = random.choice(users['id'])
-        product = random.choice(products['id'])
-        unique_pairs.add((user, product))
+    rating_data: list[dict] = generate_rating(users_data, products_data)
 
-    ratings = pd.DataFrame([{
-        'id': uuid.uuid4(),
-        'rate': random.randint(1, 5),
-        'userId': pair[0],
-        'productId': pair[1],
-        'created_at': fake.date_time_between(start_date='-3m', end_date='now'),
-        'updated_at': fake.date_time_between(start_date='-3m', end_date='now'),
-        'deleted_at': None
-    } for pair in list(unique_pairs)[:500]])
-
+    return {
+        'tb_category': categories_data,
+        'tb_subcategory': subcategories_data,
+        'tb_user': users_data,
+        'tb_province': provinces_data,
+        'tb_discounts': discounts_data,
+        'tb_products': products_data,
+        'tb_municipality': municipalities_data,
+        'tb_price_by_weight': prices_by_weight_data,
+        'tb_orders': orders_data,
+        'tb_order_products': order_products_data,
+        'tb_rating': rating_data
+    }
 
     # --- Exportar a CSV ---
-    def safe_save(df, name):
-        df.replace({pd.NaT: None}, inplace=True)  # Manejar NaT para PostgreSQL
-        df.to_csv(f'{name}.csv', index=False, sep=';', encoding='utf-8')
 
-    safe_save(categories, 'tb_category')
-    safe_save(subcategories, 'tb_subcategory')
-    safe_save(users, 'tb_user')
-    safe_save(discounts_data_frame, 'tb_discounts')
-    safe_save(provinces_data_frame, 'tb_province')
-    safe_save(products, 'tb_products')
-    safe_save(municipalities_data_frame, 'tb_municipality')
-    safe_save(prices_by_weight_data_frame, 'tb_price_by_weight')
-    safe_save(orders, 'tb_orders')
-    safe_save(order_products, 'tb_order_products')
-    safe_save(ratings, 'tb_rating')
+def safe_save(df, name):
+    df.replace({pd.NaT: None}, inplace=True)  # Manejar NaT para PostgreSQL
+    df.to_csv(f'{name}.csv', index=False, sep=';', encoding='utf-8')
 
-
+def save_all(items: dict) -> None:
+    for name, data in items.items():
+        df = pd.DataFrame(data)
+        safe_save(df, name)
 
 def load_to_postgres():
     try:
@@ -272,7 +329,7 @@ def load_to_postgres():
             'tb_price_by_weight'
         ]
 
-        # 
+        #
 
         for table in tables:
             df = pd.read_csv(f'{table}.csv', sep=';', dtype={'id': str})
@@ -289,7 +346,7 @@ def load_to_postgres():
         print(f'❌ Error: {str(e)}')
         raise
 
-
 if __name__ == "__main__":
-    generate_data()
+    data: dict = generate_data()
+    save_all(data)
     load_to_postgres()
