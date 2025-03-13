@@ -3,8 +3,11 @@ import pandas as pd
 import random
 import uuid
 from sqlalchemy import create_engine
+from dotenv import load_dotenv
+import os
 
 fake = Faker('es_ES')
+load_dotenv('local.env')
 
 # Method to generate common datas
 def generate_common_data():
@@ -18,7 +21,7 @@ def generate_common_data():
 # Method to generate image_urls
 def generate_image_url():
     var = f'Designer ({random.randint(0, 15)}).jpeg'
-    return f'http://localhost:8080/images/{var}'
+    return f'{os.environ.get("IMAGES")}{var}'
 
 # Category
 def generate_category() -> list[dict]:
@@ -160,8 +163,8 @@ def generate_price_by_weight(municipalities: list[dict]) -> list[dict]:
             while True:
                 _price = round(random.uniform(1, 50), 2)
                 min_weight = random.randint(10, 80)
-                if(municipality['id'], _price) not in unique_prices:
-                    unique_prices.add((municipality['id'], _price))
+                if(municipality['id'], min_weight) not in unique_prices:
+                    unique_prices.add((municipality['id'], min_weight))
                     _pbw: dict = generate_common_data()
                     _pbw.update({
                         'municipalityId': municipality['id'],
@@ -175,18 +178,6 @@ def generate_price_by_weight(municipalities: list[dict]) -> list[dict]:
 
 # Orders
 def generate_order(users: list[dict]) -> list[dict]:
-    provinces: list[str] = [
-        'Álava', 'Albacete', 'Alicante', 'Almería', 'Asturias', 'Ávila',
-        'Badajoz', 'Baleares', 'Barcelona', 'Burgos', 'Cáceres', 'Cádiz',
-        'Cantabria', 'Castellón', 'Ciudad Real', 'Córdoba', 'Cuenca',
-        'Gerona', 'Granada', 'Guadalajara', 'Guipúzcoa', 'Huelva',
-        'Huesca', 'Jaén', 'La Coruña', 'La Rioja', 'Las Palmas', 'León',
-        'Lérida', 'Lugo', 'Madrid', 'Málaga', 'Murcia', 'Navarra',
-        'Orense', 'Palencia', 'Pontevedra', 'Salamanca', 'Tenerife',
-        'Segovia', 'Sevilla', 'Soria', 'Tarragona', 'Teruel', 'Toledo',
-        'Valencia', 'Valladolid', 'Vizcaya', 'Zamora', 'Zaragoza'
-    ]
-
     orders_data: list[dict] = []
 
     for _ in range(300):
@@ -194,7 +185,7 @@ def generate_order(users: list[dict]) -> list[dict]:
         _order.update({
             'receiver_name': fake.name()[:70],
             'phone': fake.numerify('+34 6## ### ###')[:15],
-            'province': random.choice(provinces)[:20],
+            'aux_phone': fake.numerify('+34 6## ### ###')[:15],
             'address': fake.street_address()[:255],
             'CI': fake.bothify(text='########?').upper(),
             'subtotal': 0.0,
@@ -313,7 +304,7 @@ def save_all(items: dict) -> None:
 
 def load_to_postgres():
     try:
-        engine = create_engine('postgresql+psycopg2://myuser:mypassword@localhost:5432/esaquishop')
+        engine = create_engine(os.environ.get("DB_HOST"))
 
         tables = [
             'tb_province',

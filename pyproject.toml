@@ -8,5 +8,6 @@ dependencies = [
     "faker>=36.1.1",
     "pandas>=2.2.3",
     "psycopg2>=2.9.10",
+    "python-dotenv>=1.0.1",
     "sqlalchemy>=2.0.38",
 ]
