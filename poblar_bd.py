@@ -221,7 +221,7 @@ def generate_price_by_weight(municipalities: list[dict]) -> list[dict]:
 
 
 # Orders
-def generate_order(users: list[dict]) -> list[dict]:
+def generate_order(users: list[dict], municipalities: list[dict]) -> list[dict]:
     orders_data: list[dict] = []
 
     for _ in range(300):
@@ -239,6 +239,7 @@ def generate_order(users: list[dict]) -> list[dict]:
                 ),
                 "userId": random.choice(users)["id"],
                 "stripe_id": fake.uuid4() if random.random() > 0.5 else None,
+                "shipping_price": random.randint(5, 40),
             }
         )
         orders_data.append(_order)
@@ -326,7 +327,7 @@ def generate_data():
     prices_by_weight_data: list[dict] = generate_price_by_weight(municipalities_data)
 
     # 9. tb_orders (300 órdenes)
-    orders_data: list[dict] = generate_order(users_data)
+    orders_data: list[dict] = generate_order(users_data, municipalities_data)
 
     # 10. tb_order_products (Relación segura)
     order_products_data: list[dict] = generate_order_product(orders_data, products_data)
