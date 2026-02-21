@@ -238,7 +238,7 @@ def generate_order(users: list[dict], municipalities: list[dict]) -> list[dict]:
                     ["pending", "accepted", "cancelled", "retired", "paid", "completed"]
                 ),
                 "userId": random.choice(users)["id"],
-                "stripe_id": fake.uuid4() if random.random() > 0.5 else None,
+                "payment_id": fake.uuid4() if random.random() > 0.5 else None,
                 "shipping_price": random.randint(5, 40),
             }
         )
