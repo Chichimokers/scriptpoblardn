@@ -365,7 +365,7 @@ def save_all(items: dict) -> None:
 
 def load_to_postgres():
     try:
-        engine = create_engine("postgresql://basededato1:contrbasededato2aseña@localhost:5432/esaquishop")
+        engine = create_engine("postgresql://basededato1:contrbasededato2aseña@localhost:5432/postgres")
 
         tables = [
             "tb_province",
