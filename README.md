@@ -1,6 +1,18 @@
-# How to run?
+# scriptpoblardn
 
-# 1. Install the required packages
-pip install .
+## Tecnologias
+- Python
 
-# 2. Run the script
+## Instalacion
+
+```bash
+pip install -r requirements.txt
+python main.py
+```
+
+## Descripcion
+
+Proyecto scriptpoblardn.
+
+---
+(c) 2026 Chichimokers -- https://github.com/Chichimokers/scriptpoblardn
